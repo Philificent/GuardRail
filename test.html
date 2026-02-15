@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>GuardRail Test Lab</title>
+    <style>
+        body { font-family: sans-serif; padding: 50px; line-height: 1.6; }
+        .test-section { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .hidden-overlay {
+            position: absolute;
+            top: 100px; left: 50px;
+            width: 200px; height: 50px;
+            background: red;
+            opacity: 0.001; /* Invisible to eye, visible to script */
+            z-index: 999;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>GuardRail Test Lab</h1>
+    <p>Use this page to verify your extension features are working.</p>
+
+    <div class="test-section">
+        <h3>1. Invisible Overlay (Clickjacking)</h3>
+        <p>There is an invisible "Submit" button floating over this text.</p>
+        <div class="hidden-overlay" onclick="alert('Malicious Click Captured!')"></div>
+        <p><em>Requirement: GuardRail should outline this in red.</em></p>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Media Access</h3>
+        <button onclick="navigator.mediaDevices.getUserMedia({video: true})">Request Camera</button>
+        <p><em>Requirement: GuardRail should log a "Media Access" alert when clicked.</em></p>
+    </div>
+
+    <div class="test-section">
+        <h3>3. External Data Send (POST)</h3>
+        <form action="https://google.com" method="POST">
+            <input type="text" name="data" value="SecretData123">
+            <button type="submit">Send Data to Google</button>
+        </form>
+        <p><em>Requirement: Since this sends data away from the local domain, it should trigger a "Data Exfiltration" alert.</em></p>
+    </div>
+</body>
+</html>

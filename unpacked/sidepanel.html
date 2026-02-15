@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 15px;
+        background: #0f172a;
+        color: #f8fafc;
+      }
+      .btn {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 8px;
+      }
+      .nuke {
+        background: #ef4444;
+        color: white;
+      }
+      .tool-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+      }
+      .secondary {
+        background: #334155;
+        color: white;
+        flex: 1;
+        font-size: 0.8rem;
+      }
+      .filter-box {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 10px;
+      }
+      .filter-box input,
+      .filter-box select {
+        background: #1e293b;
+        color: white;
+        border: 1px solid #334155;
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+      }
+      .card {
+        background: #1e293b;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border-left: 4px solid #475569;
+      }
+      .high {
+        border-left-color: #ef4444;
+      }
+      .medium {
+        border-left-color: #f59e0b;
+      }
+      .low {
+        border-left-color: #3b82f6;
+      }
+      .site-badge {
+        display: inline-block;
+        background: #0f172a;
+        color: #10b981;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        margin-top: 5px;
+        border: 1px solid #10b981;
+      }
+      .time {
+        font-size: 0.7rem;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>GuardRail Dashboard</h2>
+    <div class="filter-box">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search logs..."
+        style="flex: 2"
+      />
+      <select id="severityFilter" style="flex: 1">
+        <option value="all">All</option>
+        <option value="high">High</option>
+        <option value="medium">Med</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="tool-row">
+      <button id="exportBtn" class="btn secondary">Export JSON</button>
+      <button id="clearBtn" class="btn secondary">Clear Log</button>
+    </div>
+    <button id="nukeBtn" class="btn nuke">Reset Current Site</button>
+    <div style="display: flex; justify-content: space-between; margin: 15px 0">
+      <span>Panic Mode</span>
+      <input type="checkbox" id="shieldToggle" />
+    </div>
+    <div id="log"></div>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
