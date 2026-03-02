@@ -1,65 +1,103 @@
-const logDiv = document.getElementById("log");
-const toggle = document.getElementById("shieldToggle");
-const searchInput = document.getElementById("searchInput");
-const severityFilter = document.getElementById("severityFilter");
+const logDiv = document.getElementById('log');
+const shieldToggle = document.getElementById('shieldToggle');
+const spoofToggle = document.getElementById('spoofToggle');
+const searchInput = document.getElementById('searchInput');
+const severityFilter = document.getElementById('severityFilter');
 
 function render() {
-  chrome.storage.local.get({ logs: [], shieldEnabled: false }, (data) => {
-    toggle.checked = data.shieldEnabled;
+  chrome.storage.local.get({logs: [], shieldEnabled: false, spoofEnabled: false}, (data) => {
+    shieldToggle.checked = data.shieldEnabled;
+    spoofToggle.checked = data.spoofEnabled;
     const search = searchInput.value.toLowerCase();
     const severity = severityFilter.value;
 
-    const filtered = data.logs.filter((l) => {
-      const matchSearch =
-        l.site.includes(search) || l.title.toLowerCase().includes(search);
-      const matchSev = severity === "all" || l.severity === severity;
+    const filtered = data.logs.filter(l => {
+      const matchSearch = l.site.includes(search) || l.title.toLowerCase().includes(search);
+      const matchSev = severity === 'all' || l.severity === severity;
       return matchSearch && matchSev;
     });
 
-    logDiv.innerHTML = filtered
-      .map(
-        (l) => `
+    logDiv.innerHTML = filtered.map(l => `
       <div class="card ${l.severity}">
-        <span class="time">${l.time}</span><br>
+        <span style="font-size:0.7rem; color:#94a3b8">${l.time}</span><br>
         <strong>${l.title}</strong><br><small>${l.desc}</small><br>
         <div class="site-badge">📍 ${l.site}</div>
       </div>
-    `,
-      )
-      .join("");
+    `).join('');
   });
 }
 
-toggle.addEventListener("change", () => {
-  chrome.runtime.sendMessage({
-    type: "TOGGLE_SHIELD",
-    enabled: toggle.checked,
-  });
-  chrome.storage.local.set({ shieldEnabled: toggle.checked });
+// Toggles
+shieldToggle.addEventListener('change', () => {
+  chrome.storage.local.set({shieldEnabled: shieldToggle.checked});
+  chrome.runtime.sendMessage({type: "TOGGLE_SHIELD", enabled: shieldToggle.checked});
 });
 
-document.getElementById("nukeBtn").addEventListener("click", () => {
-  if (confirm("Wipe site data?"))
-    chrome.runtime.sendMessage({ type: "WIPE_CURRENT_TAB" });
+spoofToggle.addEventListener('change', () => {
+  chrome.storage.local.set({spoofEnabled: spoofToggle.checked});
+  chrome.runtime.sendMessage({type: "TOGGLE_SPOOF", enabled: spoofToggle.checked});
 });
 
-document.getElementById("clearBtn").addEventListener("click", () => {
-  chrome.storage.local.set({ logs: [] }, render);
-});
-
-document.getElementById("exportBtn").addEventListener("click", () => {
-  chrome.storage.local.get({ logs: [] }, (data) => {
-    const blob = new Blob([JSON.stringify(data.logs, null, 2)], {
-      type: "application/json",
+// Tools
+document.getElementById('whitelistBtn').addEventListener('click', () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const host = new URL(tabs[0].url).hostname;
+    chrome.storage.local.get({whitelist: []}, (data) => {
+        if (!data.whitelist.includes(host)) {
+            const newList = [...data.whitelist, host];
+            chrome.storage.local.set({whitelist: newList}, () => {
+                alert(`${host} added to trusted sites.`);
+                render();
+            });
+        }
     });
-    const a = document.createElement("a");
+  });
+});
+
+document.getElementById('nukeBtn').addEventListener('click', () => {
+  if(confirm("Wipe site data?")) chrome.runtime.sendMessage({type: "WIPE_CURRENT_TAB"});
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  chrome.storage.local.set({logs: []}, render);
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  chrome.storage.local.get({logs: []}, (data) => {
+    if (data.logs.length === 0) {
+      alert("No logs to export!");
+      return;
+    }
+
+    const date = new Date().toLocaleDateString();
+    const site = data.logs[0]?.site || "Unknown";
+
+    // Build the Markdown String
+    let md = `# 🛡️ GuardRail Security Audit Report\n\n`;
+    md += `**Date:** ${date} | **Primary Site Audit:** ${site}\n`;
+    md += `**GuardRail Version:** v1.5\n\n`;
+    md += `## 1. Security Incident Log\n\n`;
+    md += `| Time | Severity | Event Type | Site Context | Description |\n`;
+    md += `| :--- | :--- | :--- | :--- | :--- |\n`;
+
+    data.logs.forEach(l => {
+      // Map severity to an emoji for better visual reporting
+      const emoji = l.severity === 'high' ? '🔴' : (l.severity === 'medium' ? '🟡' : '🔵');
+      md += `| ${l.time} | ${emoji} ${l.severity.toUpperCase()} | ${l.title} | ${l.site} | ${l.desc} |\n`;
+    });
+
+    md += `\n\n---\n*Report generated by GuardRail Security Extension*`;
+
+    // Download as .md file
+    const blob = new Blob([md], {type: 'text/markdown'});
+    const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `guardrail-log.json`;
+    a.download = `GuardRail-Audit-${site.replace(/\./g, '-')}.md`;
     a.click();
   });
 });
 
-searchInput.addEventListener("input", render);
-severityFilter.addEventListener("change", render);
+searchInput.addEventListener('input', render);
+severityFilter.addEventListener('change', render);
 chrome.runtime.onMessage.addListener(render);
 render();
