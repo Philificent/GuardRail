@@ -7,6 +7,10 @@ chrome.webNavigation.onCommitted.addListener((details) => {
   }
 });
 
+chrome.tabs.onRemoved.addListener((tabId) => {
+  delete navigationHistory[tabId];
+});
+
 chrome.webRequest.onBeforeRequest.addListener(
   (details) => {
     if (details.method === "POST") {
