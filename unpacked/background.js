@@ -2,9 +2,33 @@ let navigationHistory = {};
 const BLOCK_RULE_ID = 1;
 const SPOOF_RULE_ID = 2;
 
-// 1. Initial Setup & Persistence
-chrome.runtime.onInstalled.addListener(() => reapplySettings());
-chrome.runtime.onStartup.addListener(() => reapplySettings());
+chrome.webNavigation.onCommitted.addListener((details) => {
+  if (details.frameId === 0) {
+    navigationHistory[details.tabId] = new URL(details.url).hostname;
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  delete navigationHistory[tabId];
+});
+
+chrome.webRequest.onBeforeRequest.addListener(
+  (details) => {
+    if (details.method === "POST") {
+      const currentHost = navigationHistory[details.tabId];
+      const targetHost = new URL(details.url).hostname;
+      if (currentHost && !targetHost.endsWith(currentHost)) {
+        logEvent(
+          "high",
+          "Data Exfiltration",
+          `Data sent to external domain: ${targetHost}`,
+        );
+      }
+    }
+  },
+  { urls: ["<all_urls>"] },
+  ["requestBody"],
+);
 
 async function reapplySettings() {
     chrome.storage.local.get({ shieldEnabled: false, spoofEnabled: false }, (data) => {
