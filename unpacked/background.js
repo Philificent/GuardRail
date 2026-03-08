@@ -17,7 +17,7 @@ chrome.webRequest.onBeforeRequest.addListener(
     if (details.method === "POST") {
       const currentHost = navigationHistory[details.tabId];
       const targetHost = new URL(details.url).hostname;
-      if (currentHost && !targetHost.endsWith(currentHost)) {
+      if (currentHost && targetHost !== currentHost && !targetHost.endsWith("." + currentHost)) {
         logEvent(
           "high",
           "Data Exfiltration",
@@ -88,7 +88,7 @@ chrome.webRequest.onBeforeRequest.addListener((details) => {
     if (details.method === "POST") {
         const currentHost = navigationHistory[details.tabId];
         const targetHost = new URL(details.url).hostname;
-        if (currentHost && !targetHost.endsWith(currentHost)) {
+        if (currentHost && targetHost !== currentHost && !targetHost.endsWith("." + currentHost)) {
             logEvent("high", "Data Exfiltration", `Data sent to: ${targetHost}`);
         }
     }
