@@ -4,6 +4,16 @@ const spoofToggle = document.getElementById('spoofToggle');
 const searchInput = document.getElementById('searchInput');
 const severityFilter = document.getElementById('severityFilter');
 
+function debounce(func, timeout = 300) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      func.apply(this, args);
+    }, timeout);
+  };
+}
+
 function render() {
   chrome.storage.local.get({logs: [], shieldEnabled: false, spoofEnabled: false}, (data) => {
     shieldToggle.checked = data.shieldEnabled;
@@ -97,7 +107,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   });
 });
 
-searchInput.addEventListener('input', render);
-severityFilter.addEventListener('change', render);
+searchInput.addEventListener("input", debounce(render, 250));
+severityFilter.addEventListener("change", render);
 chrome.runtime.onMessage.addListener(render);
 render();
