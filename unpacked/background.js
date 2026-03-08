@@ -22,7 +22,6 @@ chrome.webRequest.onBeforeRequest.addListener(
     }
   },
   { urls: ["<all_urls>"] },
-  ["requestBody"],
 );
 
 chrome.cookies.onChanged.addListener((change) => {
