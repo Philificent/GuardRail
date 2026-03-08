@@ -78,11 +78,21 @@ async function toggleKillSwitch(isEnabled) {
   );
 }
 
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.type === "LOG_EVENT")
+chrome.runtime.onMessage.addListener((request, sender) => {
+  if (request.type === "LOG_EVENT") {
     logEvent(request.severity, request.title, request.desc);
-  if (request.type === "TOGGLE_SHIELD") toggleKillSwitch(request.enabled);
-  if (request.type === "WIPE_CURRENT_TAB") nukeSite();
+  }
+
+  // Security: Only allow sensitive actions from internal extension pages (e.g. side panel)
+  const isInternal =
+    !sender.tab &&
+    sender.url &&
+    sender.url.startsWith(chrome.runtime.getURL(""));
+
+  if (isInternal) {
+    if (request.type === "TOGGLE_SHIELD") toggleKillSwitch(request.enabled);
+    if (request.type === "WIPE_CURRENT_TAB") nukeSite();
+  }
 });
 
 function nukeSite() {
