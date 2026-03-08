@@ -14,6 +14,24 @@ function debounce(func, timeout = 300) {
   };
 }
 
+function createSafeElement(tag, attributes = {}, textContent = null, children = []) {
+  const el = document.createElement(tag);
+  for (const [key, value] of Object.entries(attributes)) {
+    if (key === 'className') {
+      el.className = value;
+    } else if (key === 'style' && typeof value === 'object') {
+      Object.assign(el.style, value);
+    } else {
+      el.setAttribute(key, value);
+    }
+  }
+  if (textContent !== null) {
+    el.textContent = textContent;
+  }
+  children.forEach(child => el.appendChild(child));
+  return el;
+}
+
 function render() {
   chrome.storage.local.get({logs: [], shieldEnabled: false, spoofEnabled: false}, (data) => {
     shieldToggle.checked = data.shieldEnabled;
@@ -29,34 +47,15 @@ function render() {
 
     logDiv.textContent = '';
     filtered.forEach(l => {
-      const card = document.createElement('div');
-      card.className = `card ${l.severity}`;
-
-      const timeSpan = document.createElement('span');
-      timeSpan.style.fontSize = '0.7rem';
-      timeSpan.style.color = '#94a3b8';
-      timeSpan.textContent = l.time;
-      card.appendChild(timeSpan);
-
-      card.appendChild(document.createElement('br'));
-
-      const titleStrong = document.createElement('strong');
-      titleStrong.textContent = l.title;
-      card.appendChild(titleStrong);
-
-      card.appendChild(document.createElement('br'));
-
-      const descSmall = document.createElement('small');
-      descSmall.textContent = l.desc;
-      card.appendChild(descSmall);
-
-      card.appendChild(document.createElement('br'));
-
-      const siteBadge = document.createElement('div');
-      siteBadge.className = 'site-badge';
-      siteBadge.textContent = `📍 ${l.site}`;
-      card.appendChild(siteBadge);
-
+      const card = createSafeElement('div', { className: `card ${l.severity}` }, null, [
+        createSafeElement('span', { className: 'time' }, l.time),
+        createSafeElement('br'),
+        createSafeElement('strong', {}, l.title),
+        createSafeElement('br'),
+        createSafeElement('small', {}, l.desc),
+        createSafeElement('br'),
+        createSafeElement('div', { className: 'site-badge' }, `📍 ${l.site}`)
+      ]);
       logDiv.appendChild(card);
     });
   });
