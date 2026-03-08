@@ -27,7 +27,6 @@ chrome.webRequest.onBeforeRequest.addListener(
     }
   },
   { urls: ["<all_urls>"] },
-  ["requestBody"],
 );
 
 async function reapplySettings() {
