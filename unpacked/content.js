@@ -40,6 +40,8 @@ function scanXSS() {
 }
 
 window.addEventListener("message", (e) => {
+    if (e.source !== window || e.origin !== window.location.origin || !e.data) return;
+
     if (e.data.type === "GUARDRAIL_MEDIA_INTERNAL") {
         chrome.runtime.sendMessage({ type: "LOG_EVENT", severity: "high", title: "Media Access", desc: "Hardware request intercepted." });
     }
