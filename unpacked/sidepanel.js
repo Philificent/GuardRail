@@ -27,13 +27,38 @@ function render() {
       return matchSearch && matchSev;
     });
 
-    logDiv.innerHTML = filtered.map(l => `
-      <div class="card ${l.severity}">
-        <span style="font-size:0.7rem; color:#94a3b8">${l.time}</span><br>
-        <strong>${l.title}</strong><br><small>${l.desc}</small><br>
-        <div class="site-badge">📍 ${l.site}</div>
-      </div>
-    `).join('');
+    logDiv.textContent = '';
+    filtered.forEach(l => {
+      const card = document.createElement('div');
+      card.className = `card ${l.severity}`;
+
+      const timeSpan = document.createElement('span');
+      timeSpan.style.fontSize = '0.7rem';
+      timeSpan.style.color = '#94a3b8';
+      timeSpan.textContent = l.time;
+      card.appendChild(timeSpan);
+
+      card.appendChild(document.createElement('br'));
+
+      const titleStrong = document.createElement('strong');
+      titleStrong.textContent = l.title;
+      card.appendChild(titleStrong);
+
+      card.appendChild(document.createElement('br'));
+
+      const descSmall = document.createElement('small');
+      descSmall.textContent = l.desc;
+      card.appendChild(descSmall);
+
+      card.appendChild(document.createElement('br'));
+
+      const siteBadge = document.createElement('div');
+      siteBadge.className = 'site-badge';
+      siteBadge.textContent = `📍 ${l.site}`;
+      card.appendChild(siteBadge);
+
+      logDiv.appendChild(card);
+    });
   });
 }
 
