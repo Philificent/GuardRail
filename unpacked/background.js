@@ -261,6 +261,22 @@ async function toggleSpoofing(isEnabled) {
   });
 }
 
+chrome.runtime.onMessage.addListener((request, sender) => {
+  if (request.type === "LOG_EVENT") {
+    logEvent(request.severity, request.title, request.desc);
+  }
+
+  // Security: Only allow sensitive actions from internal extension pages (e.g. side panel)
+  const isInternal =
+    !sender.tab &&
+    sender.url &&
+    sender.url.startsWith(chrome.runtime.getURL(""));
+
+  if (isInternal) {
+    if (request.type === "TOGGLE_SHIELD") toggleKillSwitch(request.enabled);
+    if (request.type === "WIPE_CURRENT_TAB") nukeSite();
+  }
+});
 async function toggleKillSwitch(isEnabled, whitelist = [], blocklist = []) {
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
   const removableIds = existingRules
