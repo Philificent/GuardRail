@@ -8,16 +8,38 @@
     .nuke { background: #ef4444; color: white; }
     .tool-row { display: flex; gap: 8px; margin-bottom: 12px; }
     .secondary { background: #334155; color: white; flex: 1; font-size: 0.75rem; }
+    .accent { background: #10b981; color: #052e16; }
     .filter-box { display: flex; gap: 5px; margin-bottom: 10px; }
     .filter-box input, .filter-box select { background: #1e293b; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px; font-size: 0.75rem; }
     .card { background: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #475569; }
     .high { border-left-color: #ef4444; } .medium { border-left-color: #f59e0b; } .low { border-left-color: #3b82f6; }
     .site-badge { display: inline-block; background: #0f172a; color: #10b981; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-top: 5px; border: 1px solid #10b981; }
     .toggle-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #1e293b; padding: 8px; border-radius: 6px; }
+    .toggle-copy { margin-top: -4px; margin-bottom: 10px; font-size: 0.72rem; color: #94a3b8; line-height: 1.4; }
+    .blocklist-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .blocklist-row input { flex: 1; background: #1e293b; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px; font-size: 0.75rem; }
+    .blocklist-row textarea { width: 100%; min-height: 88px; background: #1e293b; color: white; border: 1px solid #334155; padding: 8px; border-radius: 4px; font-size: 0.75rem; resize: vertical; box-sizing: border-box; }
+    .meta { font-size: 0.72rem; color: #94a3b8; margin-bottom: 12px; }
+    .status-banner { margin-bottom: 10px; padding: 9px 10px; border-radius: 8px; font-size: 0.78rem; background: #0f172a; border: 1px solid #334155; color: #cbd5e1; }
+    .status-banner.success { border-color: #10b981; color: #d1fae5; }
+    .status-banner.warn { border-color: #f59e0b; color: #fde68a; }
+    .action-row { display: flex; gap: 8px; margin-top: 10px; }
+    .action-btn { flex: 1; border: 1px solid #475569; border-radius: 6px; padding: 8px; background: #0f172a; color: #e2e8f0; cursor: pointer; font-size: 0.72rem; }
+    .action-btn.danger { border-color: #ef4444; color: #fecaca; }
+    .action-btn.blocked { border-color: #10b981; color: #d1fae5; background: #052e16; }
+    .action-btn.busy { opacity: 0.7; pointer-events: none; }
+    .drawer { margin-bottom: 12px; background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 10px; }
+    .drawer pre { white-space: pre-wrap; word-break: break-word; font-size: 0.72rem; background: #020617; padding: 10px; border-radius: 6px; max-height: 220px; overflow: auto; }
+    .inline-details { margin-top: 10px; background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 10px; }
+    .inline-details pre { white-space: pre-wrap; word-break: break-word; font-size: 0.72rem; background: #020617; padding: 10px; border-radius: 6px; max-height: 220px; overflow: auto; }
+    .list { display: grid; gap: 8px; margin: 10px 0; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; }
+    .ghost { background: transparent; border: 1px solid #475569; color: #e2e8f0; }
   </style>
 </head>
 <body>
-  <h2>GuardRail v1.5</h2>
+  <h2>GuardRail v1.6</h2>
+  <div id="statusBanner" class="status-banner" hidden></div>
 
   <div class="filter-box">
     <input type="text" id="searchInput" placeholder="Search logs..." style="flex:2">
@@ -37,11 +59,39 @@
     <span>Mask Identity</span>
     <input type="checkbox" id="spoofToggle">
   </div>
+  <div id="spoofProfile" class="toggle-copy">When enabled, GuardRail masks your browser identity headers.</div>
+
+  <div class="toggle-group">
+    <span>Background JS Killswitch</span>
+    <input type="checkbox" id="jsKillswitchToggle">
+  </div>
+
+  <div class="blocklist-row">
+    <input type="text" id="blocklistInput" placeholder="Add blocked domain">
+    <button id="addBlocklistBtn" class="btn accent" style="width:auto; margin-bottom:0;">Block</button>
+  </div>
+  <div id="blocklistPreview" class="meta">Blocked: none</div>
 
   <div class="tool-row">
+    <button id="manageBlocklistBtn" class="btn secondary">Manage Blacklist</button>
     <button id="whitelistBtn" class="btn secondary">Trust Site</button>
     <button id="clearBtn" class="btn secondary">Clear Log</button>
     <button id="exportBtn" class="btn secondary">Export Log</button>
+  </div>
+
+  <div id="blocklistDrawer" class="drawer" hidden>
+    <div class="tool-row" style="margin-bottom:8px;">
+      <strong style="flex:1;">Manage Blacklist</strong>
+      <button id="closeBlocklistBtn" class="btn secondary" style="width:auto; margin-bottom:0;">Close</button>
+    </div>
+    <div class="meta">Review entries, remove domains, or paste multiple sites at once.</div>
+    <div id="blocklistManagerList" class="list"></div>
+    <div class="blocklist-row" style="display:block;">
+      <textarea id="bulkBlocklistInput" placeholder="Add one domain per line, or separate with commas/spaces"></textarea>
+    </div>
+    <div class="tool-row" style="margin-bottom:0;">
+      <button id="bulkAddBlocklistBtn" class="btn accent">Add In Bulk</button>
+    </div>
   </div>
 
   <button id="nukeBtn" class="btn nuke">Reset Current Site</button>
