@@ -23,7 +23,12 @@ function scanXSS() {
 }
 
 window.addEventListener("message", (e) => {
-  if (e.data.type === "GUARDRAIL_MEDIA_INTERNAL") {
+  if (
+    e.source === window &&
+    e.origin === window.location.origin &&
+    e.data &&
+    e.data.type === "GUARDRAIL_MEDIA_INTERNAL"
+  ) {
     chrome.runtime.sendMessage({
       type: "LOG_EVENT",
       severity: "high",
