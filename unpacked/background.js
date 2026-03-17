@@ -65,7 +65,6 @@ chrome.webRequest.onBeforeRequest.addListener(
     handlePotentialExfiltration(details);
   },
   { urls: ["<all_urls>"] },
-  ["requestBody"],
 );
 
 async function handlePotentialExfiltration(details) {
@@ -94,7 +93,6 @@ async function handlePotentialExfiltration(details) {
       return;
     }
 
-    const payloadPreview = buildPayloadPreview(details);
     const blocklist = await getStoredBlocklist();
     const wasBlocked = blocklist.includes(targetHost);
     const extensionContext = await getExtensionContext(parsedUrl);
@@ -127,8 +125,6 @@ async function handlePotentialExfiltration(details) {
         extensionId: extensionContext?.id || null,
         extensionName: extensionContext?.name || null,
         blocked: wasBlocked,
-        requestBodyPreview: payloadPreview,
-        requestBodyCaptured: Boolean(payloadPreview),
         query: parsedUrl.search ? parsedUrl.search.slice(1, MAX_PREVIEW + 1) : "",
       },
     };
@@ -538,41 +534,6 @@ function isCrossDomain(currentHost, targetHost) {
       targetHost !== currentHost &&
       !targetHost.endsWith(`.${currentHost}`),
   );
-}
-
-function buildPayloadPreview(details) {
-  if (!details.requestBody) {
-    return "";
-  }
-
-  if (details.requestBody.formData) {
-    return truncatePreview(JSON.stringify(details.requestBody.formData, null, 2));
-  }
-
-  if (!Array.isArray(details.requestBody.raw)) {
-    return "";
-  }
-
-  for (const entry of details.requestBody.raw) {
-    if (!entry.bytes) {
-      continue;
-    }
-
-    try {
-      const decoded = new TextDecoder().decode(entry.bytes);
-      if (decoded) {
-        return truncatePreview(decoded);
-      }
-    } catch (error) {
-      return "<binary payload>";
-    }
-  }
-
-  return "";
-}
-
-function truncatePreview(text) {
-  return text.length > MAX_PREVIEW ? `${text.slice(0, MAX_PREVIEW)}...` : text;
 }
 
 function normalizeDomain(domain) {
