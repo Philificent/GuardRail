@@ -65,7 +65,6 @@ chrome.webRequest.onBeforeRequest.addListener(
     handlePotentialExfiltration(details);
   },
   { urls: ["<all_urls>"] },
-  ["requestBody"],
 );
 
 async function handlePotentialExfiltration(details) {
@@ -94,7 +93,6 @@ async function handlePotentialExfiltration(details) {
       return;
     }
 
-    const payloadPreview = buildPayloadPreview(details);
     const blocklist = await getStoredBlocklist();
     const wasBlocked = blocklist.includes(targetHost);
     const extensionContext = await getExtensionContext(parsedUrl);
@@ -127,8 +125,6 @@ async function handlePotentialExfiltration(details) {
         extensionId: extensionContext?.id || null,
         extensionName: extensionContext?.name || null,
         blocked: wasBlocked,
-        requestBodyPreview: payloadPreview,
-        requestBodyCaptured: Boolean(payloadPreview),
         query: parsedUrl.search ? parsedUrl.search.slice(1, MAX_PREVIEW + 1) : "",
       },
     };
