@@ -553,13 +553,14 @@ function buildPayloadPreview(details) {
     return "";
   }
 
+  const decoder = new TextDecoder();
   for (const entry of details.requestBody.raw) {
     if (!entry.bytes) {
       continue;
     }
 
     try {
-      const decoded = new TextDecoder().decode(entry.bytes);
+      const decoded = decoder.decode(entry.bytes);
       if (decoded) {
         return truncatePreview(decoded);
       }
