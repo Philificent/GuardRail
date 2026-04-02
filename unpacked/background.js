@@ -536,6 +536,42 @@ function isCrossDomain(currentHost, targetHost) {
   );
 }
 
+function buildPayloadPreview(details) {
+  if (!details.requestBody) {
+    return "";
+  }
+
+  if (details.requestBody.formData) {
+    return truncatePreview(JSON.stringify(details.requestBody.formData, null, 2));
+  }
+
+  if (!Array.isArray(details.requestBody.raw)) {
+    return "";
+  }
+
+  const decoder = new TextDecoder();
+  for (const entry of details.requestBody.raw) {
+    if (!entry.bytes) {
+      continue;
+    }
+
+    try {
+      const decoded = decoder.decode(entry.bytes);
+      if (decoded) {
+        return truncatePreview(decoded);
+      }
+    } catch (error) {
+      return "<binary payload>";
+    }
+  }
+
+  return "";
+}
+
+function truncatePreview(text) {
+  return text.length > MAX_PREVIEW ? `${text.slice(0, MAX_PREVIEW)}...` : text;
+}
+
 function normalizeDomain(domain) {
   if (!domain || typeof domain !== "string") {
     return null;
