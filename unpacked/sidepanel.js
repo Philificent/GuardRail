@@ -76,6 +76,8 @@ function render() {
     const search = searchInput.value.toLowerCase();
     const severity = severityFilter.value;
 
+    const blocklistSet = new Set(data.blocklist);
+
     const filtered = data.logs.filter(l => {
       if (severity !== 'all' && l.severity !== severity) return false;
       if (!search) return true;
@@ -96,7 +98,7 @@ function render() {
           if (!normalizedDomain) {
             return;
           }
-          const blocked = data.blocklist.includes(normalizedDomain);
+          const blocked = blocklistSet.has(normalizedDomain);
           actions.push(createSafeElement('button', {
             className: `action-btn ${blocked ? 'blocked' : 'danger'}`,
             'data-action': blocked ? 'unblock' : 'block',
