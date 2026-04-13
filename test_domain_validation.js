@@ -1,7 +1,11 @@
 // test_domain_validation.js
 function testDomainValidation(currentHost, targetHost) {
   // Logic from fixed background.js
-  if (currentHost && targetHost !== currentHost && !targetHost.endsWith("." + currentHost)) {
+  if (
+    currentHost &&
+    targetHost !== currentHost &&
+    !targetHost.endsWith("." + currentHost)
+  ) {
     return true; // Exfiltration detected (vuln triggered/alert logged)
   }
   return false; // No exfiltration (safe)
@@ -24,10 +28,14 @@ function runTests() {
   for (const t of tests) {
     const alert = testDomainValidation(t.current, t.target);
     if (alert === t.expectedAlert) {
-      console.log(`✅ PASS: current=${t.current}, target=${t.target} -> Alert: ${alert}`);
+      console.log(
+        `✅ PASS: current=${t.current}, target=${t.target} -> Alert: ${alert}`,
+      );
       passed++;
     } else {
-      console.error(`❌ FAIL: current=${t.current}, target=${t.target} -> Expected Alert: ${t.expectedAlert}, Got: ${alert}`);
+      console.error(
+        `❌ FAIL: current=${t.current}, target=${t.target} -> Expected Alert: ${t.expectedAlert}, Got: ${alert}`,
+      );
     }
   }
 

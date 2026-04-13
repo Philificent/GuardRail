@@ -1,11 +1,18 @@
 (function () {
   const state = { jsKillswitchEnabled: true };
   const report = (payload) => {
-    window.postMessage({ type: "GUARDRAIL_JS_EVENT", ...payload }, window.location.origin);
+    window.postMessage(
+      { type: "GUARDRAIL_JS_EVENT", ...payload },
+      window.location.origin,
+    );
   };
 
   window.addEventListener("message", (event) => {
-    if (event.source !== window || event.origin !== window.location.origin || !event.data) {
+    if (
+      event.source !== window ||
+      event.origin !== window.location.origin ||
+      !event.data
+    ) {
       return;
     }
 
@@ -18,13 +25,19 @@
     navigator.mediaDevices,
   );
   navigator.mediaDevices.getUserMedia = async function (c) {
-    window.postMessage({ type: "GUARDRAIL_MEDIA_INTERNAL", constraints: c }, window.location.origin);
+    window.postMessage(
+      { type: "GUARDRAIL_MEDIA_INTERNAL", constraints: c },
+      window.location.origin,
+    );
     return originalGUM(c);
   };
 
   const originalAddEventListener = EventTarget.prototype.addEventListener;
   EventTarget.prototype.addEventListener = function (type, listener, options) {
-    if (typeof type === "string" && ["beforeunload", "unload", "pagehide"].includes(type)) {
+    if (
+      typeof type === "string" &&
+      ["beforeunload", "unload", "pagehide"].includes(type)
+    ) {
       report({
         severity: "medium",
         title: "Unload Hook Registered",
@@ -32,7 +45,10 @@
         kind: "unload-hook",
         note: "Unload hooks are often used for pop-unders, tracking beacons, or exit interception.",
       });
-      if (state.jsKillswitchEnabled && (type === "beforeunload" || type === "unload")) {
+      if (
+        state.jsKillswitchEnabled &&
+        (type === "beforeunload" || type === "unload")
+      ) {
         return;
       }
     }
@@ -89,7 +105,10 @@
     return originalWindowOpen(...args);
   };
 
-  const originalTitleDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, "title");
+  const originalTitleDescriptor = Object.getOwnPropertyDescriptor(
+    Document.prototype,
+    "title",
+  );
   if (originalTitleDescriptor?.set) {
     Object.defineProperty(document, "title", {
       configurable: true,
@@ -118,7 +137,11 @@
   const observeMedia = () => {
     const mediaElements = document.querySelectorAll("video, audio");
     mediaElements.forEach((media) => {
-      const isHidden = media.hidden || media.offsetParent === null || media.muted || media.volume === 0;
+      const isHidden =
+        media.hidden ||
+        media.offsetParent === null ||
+        media.muted ||
+        media.volume === 0;
       const hasAutoplay = media.autoplay || media.hasAttribute("autoplay");
       if (hasAutoplay && isHidden) {
         report({
@@ -137,7 +160,11 @@
   };
 
   const observer = new MutationObserver(() => observeMedia());
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+  });
   document.addEventListener("visibilitychange", observeMedia, true);
   setTimeout(observeMedia, 1500);
 })();

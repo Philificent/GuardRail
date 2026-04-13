@@ -1,9 +1,12 @@
-const fs = require('fs');
-const vm = require('vm');
-const path = require('path');
+const fs = require("fs");
+const vm = require("vm");
+const path = require("path");
 
 // Read the actual sidepanel.js file
-const sidepanelCode = fs.readFileSync(path.join(__dirname, 'unpacked', 'sidepanel.js'), 'utf8');
+const sidepanelCode = fs.readFileSync(
+  path.join(__dirname, "unpacked", "sidepanel.js"),
+  "utf8",
+);
 
 // We only need parseDomains, which is a pure function.
 // We can extract it by running the script in a mock environment that stub out the DOM elements and chrome API.
@@ -14,33 +17,33 @@ const sandbox = {
       appendChild: () => {},
       classList: { add: () => {}, remove: () => {} },
       style: {},
-      value: ''
+      value: "",
     }),
     createElement: () => ({
       setAttribute: () => {},
       appendChild: () => {},
       style: {},
-      classList: { add: () => {}, remove: () => {} }
-    })
+      classList: { add: () => {}, remove: () => {} },
+    }),
   },
   chrome: {
     storage: {
-      local: { get: () => {}, set: () => {} }
+      local: { get: () => {}, set: () => {} },
     },
     runtime: {
       sendMessage: () => {},
-      onMessage: { addListener: () => {} }
+      onMessage: { addListener: () => {} },
     },
     tabs: {
-      query: () => {}
-    }
+      query: () => {},
+    },
   },
   URL: URL,
   alert: () => {},
   confirm: () => true,
   setTimeout: setTimeout,
   clearTimeout: clearTimeout,
-  console: console
+  console: console,
 };
 
 vm.createContext(sandbox);
@@ -52,11 +55,20 @@ function runTests() {
     { input: "example.com, test.com", expected: ["example.com", "test.com"] },
     { input: "example.com test.com", expected: ["example.com", "test.com"] },
     { input: "example.com\ntest.com", expected: ["example.com", "test.com"] },
-    { input: ", , example.com  ,  test.com\n\n", expected: ["example.com", "test.com"] },
+    {
+      input: ", , example.com  ,  test.com\n\n",
+      expected: ["example.com", "test.com"],
+    },
     { input: "", expected: [] },
     { input: "   ", expected: [] },
-    { input: "example.com, , test.com, ", expected: ["example.com", "test.com"] },
-    { input: "foo.bar,baz.qux\nquux.corge\tgrault.garply", expected: ["foo.bar", "baz.qux", "quux.corge", "grault.garply"] }
+    {
+      input: "example.com, , test.com, ",
+      expected: ["example.com", "test.com"],
+    },
+    {
+      input: "foo.bar,baz.qux\nquux.corge\tgrault.garply",
+      expected: ["foo.bar", "baz.qux", "quux.corge", "grault.garply"],
+    },
   ];
 
   let passed = 0;
@@ -66,10 +78,14 @@ function runTests() {
     const expectedStr = JSON.stringify(t.expected);
 
     if (resultStr === expectedStr) {
-      console.log(`✅ PASS: input=${JSON.stringify(t.input)} -> Expected: ${expectedStr}, Got: ${resultStr}`);
+      console.log(
+        `✅ PASS: input=${JSON.stringify(t.input)} -> Expected: ${expectedStr}, Got: ${resultStr}`,
+      );
       passed++;
     } else {
-      console.error(`❌ FAIL: input=${JSON.stringify(t.input)} -> Expected: ${expectedStr}, Got: ${resultStr}`);
+      console.error(
+        `❌ FAIL: input=${JSON.stringify(t.input)} -> Expected: ${expectedStr}, Got: ${resultStr}`,
+      );
     }
   }
 

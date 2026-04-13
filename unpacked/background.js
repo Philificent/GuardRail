@@ -6,8 +6,10 @@ const BLOCKLIST_RULE_BASE = 1000;
 const MAX_LOGS = 100;
 const MAX_PREVIEW = 1200;
 const navigationHistory = {};
+let cachedBlocklist = null;
 const SPOOF_PROFILE = {
-  userAgent: "Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/115.0",
+  userAgent:
+    "Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/115.0",
   referer: "removed",
 };
 
@@ -24,6 +26,10 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") {
     return;
+  }
+
+  if (changes.blocklist) {
+    cachedBlocklist = changes.blocklist.newValue || [];
   }
 
   if (changes.logs) {
@@ -68,68 +74,81 @@ chrome.webRequest.onBeforeRequest.addListener(
 );
 
 async function handlePotentialExfiltration(details) {
-    if (details.tabId < 0) {
-      return;
-    }
+  if (details.tabId < 0) {
+    return;
+  }
 
-    const currentHost = navigationHistory[details.tabId];
-    if (!currentHost) {
-      return;
-    }
+  const currentHost = navigationHistory[details.tabId];
+  if (!currentHost) {
+    return;
+  }
 
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(details.url);
-    } catch (error) {
-      return;
-    }
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(details.url);
+  } catch (error) {
+    return;
+  }
 
-    const targetHost = parsedUrl.hostname;
-    if (parsedUrl.protocol === "chrome-extension:" && targetHost === chrome.runtime.id) {
-      return;
-    }
+  const targetHost = parsedUrl.hostname;
+  if (
+    parsedUrl.protocol === "chrome-extension:" &&
+    targetHost === chrome.runtime.id
+  ) {
+    return;
+  }
 
-    if (!isCrossDomain(currentHost, targetHost)) {
-      return;
-    }
+  if (!isCrossDomain(currentHost, targetHost)) {
+    return;
+  }
 
-    const blocklist = await getStoredBlocklist();
-    const wasBlocked = blocklist.includes(targetHost);
-    const extensionContext = await getExtensionContext(parsedUrl);
-    const eventTitle = wasBlocked
-      ? (extensionContext ? "Blocked Extension Transfer" : "Blocked Data Exfiltration")
-      : (extensionContext ? "Extension Data Transfer" : "Data Exfiltration");
-    const eventDesc = wasBlocked
-      ? (extensionContext
-          ? `Blocked request to extension: ${extensionContext.label}. Request was not sent.`
-          : `Blocked request to: ${targetHost}. Request was not sent.`)
-      : (extensionContext
-          ? `Data sent to extension: ${extensionContext.label}`
-          : `Data sent to: ${targetHost}`);
-    const event = {
-      severity: "high",
-      title: eventTitle,
-      desc: eventDesc,
-      site: currentHost,
-      actions: extensionContext
-        ? []
-        : [{ type: "block-domain", label: "Add to Blocklist", domain: targetHost }],
-      details: {
-        kind: "network-request",
-        method: details.method,
-        url: parsedUrl.origin + parsedUrl.pathname,
-        type: details.type,
-        initiator: details.initiator || null,
-        targetHost,
-        targetLabel: extensionContext?.label || targetHost,
-        extensionId: extensionContext?.id || null,
-        extensionName: extensionContext?.name || null,
-        blocked: wasBlocked,
-        query: parsedUrl.search ? "[REDACTED]" : "",
-      },
-    };
+  const blocklist = await getStoredBlocklist();
+  const wasBlocked = blocklist.includes(targetHost);
+  const extensionContext = await getExtensionContext(parsedUrl);
+  const eventTitle = wasBlocked
+    ? extensionContext
+      ? "Blocked Extension Transfer"
+      : "Blocked Data Exfiltration"
+    : extensionContext
+      ? "Extension Data Transfer"
+      : "Data Exfiltration";
+  const eventDesc = wasBlocked
+    ? extensionContext
+      ? `Blocked request to extension: ${extensionContext.label}. Request was not sent.`
+      : `Blocked request to: ${targetHost}. Request was not sent.`
+    : extensionContext
+      ? `Data sent to extension: ${extensionContext.label}`
+      : `Data sent to: ${targetHost}`;
+  const event = {
+    severity: "high",
+    title: eventTitle,
+    desc: eventDesc,
+    site: currentHost,
+    actions: extensionContext
+      ? []
+      : [
+          {
+            type: "block-domain",
+            label: "Add to Blocklist",
+            domain: targetHost,
+          },
+        ],
+    details: {
+      kind: "network-request",
+      method: details.method,
+      url: parsedUrl.origin + parsedUrl.pathname,
+      type: details.type,
+      initiator: details.initiator || null,
+      targetHost,
+      targetLabel: extensionContext?.label || targetHost,
+      extensionId: extensionContext?.id || null,
+      extensionName: extensionContext?.name || null,
+      blocked: wasBlocked,
+      query: parsedUrl.search ? "[REDACTED]" : "",
+    },
+  };
 
-    persistEvent(event);
+  persistEvent(event);
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -171,12 +190,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === "REMOVE_BLOCKLIST_DOMAIN") {
-    removeDomainFromBlocklist(request.domain).then((result) => sendResponse(result));
+    removeDomainFromBlocklist(request.domain).then((result) =>
+      sendResponse(result),
+    );
     return true;
   }
 
   if (request.type === "ADD_BLOCKLIST_BULK") {
-    addDomainsToBlocklist(request.domains).then((result) => sendResponse(result));
+    addDomainsToBlocklist(request.domains).then((result) =>
+      sendResponse(result),
+    );
     return true;
   }
 
@@ -198,15 +221,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return false;
 });
 
-chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-  const parts = notificationId.split(":");
-  if (parts[0] !== "guardrail" || parts[1] !== "block" || buttonIndex !== 0) {
-    return;
-  }
+chrome.notifications.onButtonClicked.addListener(
+  (notificationId, buttonIndex) => {
+    const parts = notificationId.split(":");
+    if (parts[0] !== "guardrail" || parts[1] !== "block" || buttonIndex !== 0) {
+      return;
+    }
 
-  addDomainToBlocklist(parts.slice(2).join(":"));
-  chrome.notifications.clear(notificationId);
-});
+    addDomainToBlocklist(parts.slice(2).join(":"));
+    chrome.notifications.clear(notificationId);
+  },
+);
 
 chrome.notifications.onClicked.addListener(() => {
   chrome.windows.getLastFocused({ populate: true }, (window) => {
@@ -222,6 +247,7 @@ async function reapplySettings() {
   chrome.storage.local.get(
     { shieldEnabled: false, spoofEnabled: false, whitelist: [], blocklist: [] },
     ({ shieldEnabled, spoofEnabled, whitelist, blocklist }) => {
+      cachedBlocklist = blocklist;
       toggleKillSwitch(shieldEnabled, whitelist, blocklist);
       toggleSpoofing(spoofEnabled);
     },
@@ -231,22 +257,27 @@ async function reapplySettings() {
 async function toggleSpoofing(isEnabled) {
   if (isEnabled) {
     await chrome.declarativeNetRequest.updateDynamicRules({
-      addRules: [{
-        id: CORE_RULE_IDS.spoofHeaders,
-        priority: 1,
-        action: {
-          type: "modifyHeaders",
-          requestHeaders: [
-            {
-              header: "user-agent",
-              operation: "set",
-              value: SPOOF_PROFILE.userAgent,
-            },
-            { header: "referer", operation: "remove" },
-          ],
+      addRules: [
+        {
+          id: CORE_RULE_IDS.spoofHeaders,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            requestHeaders: [
+              {
+                header: "user-agent",
+                operation: "set",
+                value: SPOOF_PROFILE.userAgent,
+              },
+              { header: "referer", operation: "remove" },
+            ],
+          },
+          condition: {
+            resourceTypes: ["main_frame", "sub_frame"],
+            domainType: "thirdParty",
+          },
         },
-        condition: { resourceTypes: ["main_frame", "sub_frame"], domainType: "thirdParty" },
-      }],
+      ],
       removeRuleIds: [CORE_RULE_IDS.spoofHeaders],
     });
     return;
@@ -380,7 +411,9 @@ function maybeNotify(event) {
 
   const buttons = [];
   let notificationId = `guardrail:event:${event.id}`;
-  const blockAction = event.actions.find((action) => action.type === "block-domain" && action.domain);
+  const blockAction = event.actions.find(
+    (action) => action.type === "block-domain" && action.domain,
+  );
   if (blockAction) {
     buttons.push({ title: `Block ${blockAction.domain}` });
     notificationId = `guardrail:block:${blockAction.domain}`;
@@ -468,7 +501,11 @@ async function addDomainsToBlocklist(domains) {
     return { ok: false, error: "No domains provided." };
   }
 
-  const normalized = [...new Set(domains.map((domain) => normalizeDomain(domain)).filter(Boolean))];
+  const normalized = [
+    ...new Set(
+      domains.map((domain) => normalizeDomain(domain)).filter(Boolean),
+    ),
+  ];
   if (normalized.length === 0) {
     return { ok: false, error: "No valid domains found." };
   }
@@ -478,7 +515,12 @@ async function addDomainsToBlocklist(domains) {
       const existing = new Set(blocklist);
       const added = normalized.filter((domain) => !existing.has(domain));
       if (added.length === 0) {
-        resolve({ ok: true, status: "exists", added: [], total: blocklist.length });
+        resolve({
+          ok: true,
+          status: "exists",
+          added: [],
+          total: blocklist.length,
+        });
         return;
       }
 
@@ -516,8 +558,12 @@ async function toggleKillSwitchFromStorage() {
 }
 
 async function getStoredBlocklist() {
+  if (cachedBlocklist !== null) {
+    return cachedBlocklist;
+  }
   return new Promise((resolve) => {
     chrome.storage.local.get({ blocklist: [] }, ({ blocklist }) => {
+      cachedBlocklist = blocklist;
       resolve(blocklist);
     });
   });
@@ -534,9 +580,9 @@ function getSenderSite(sender) {
 function isCrossDomain(currentHost, targetHost) {
   return Boolean(
     currentHost &&
-      targetHost &&
-      targetHost !== currentHost &&
-      !targetHost.endsWith(`.${currentHost}`),
+    targetHost &&
+    targetHost !== currentHost &&
+    !targetHost.endsWith(`.${currentHost}`),
   );
 }
 
@@ -546,7 +592,9 @@ function buildPayloadPreview(details) {
   }
 
   if (details.requestBody.formData) {
-    return truncatePreview(JSON.stringify(details.requestBody.formData, null, 2));
+    return truncatePreview(
+      JSON.stringify(details.requestBody.formData, null, 2),
+    );
   }
 
   if (!Array.isArray(details.requestBody.raw)) {
@@ -596,7 +644,9 @@ function normalizeDomain(domain) {
 function updateActionBadge(logs) {
   const actionable = logs
     .slice(0, 20)
-    .filter((entry) => entry.severity === "high" || entry.severity === "medium");
+    .filter(
+      (entry) => entry.severity === "high" || entry.severity === "medium",
+    );
 
   if (actionable.length === 0) {
     chrome.action.setBadgeText({ text: "" });
@@ -604,7 +654,9 @@ function updateActionBadge(logs) {
     return;
   }
 
-  const highCount = actionable.filter((entry) => entry.severity === "high").length;
+  const highCount = actionable.filter(
+    (entry) => entry.severity === "high",
+  ).length;
   const badgeText = `${Math.min(highCount > 0 ? highCount : actionable.length, 9)}`;
 
   chrome.action.setBadgeBackgroundColor({
