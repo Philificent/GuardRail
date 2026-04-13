@@ -77,9 +77,11 @@ function render() {
     const severity = severityFilter.value;
 
     const filtered = data.logs.filter(l => {
-      const matchSearch = l.site.toLowerCase().includes(search) || l.title.toLowerCase().includes(search) || (l.desc || '').toLowerCase().includes(search);
-      const matchSev = severity === 'all' || l.severity === severity;
-      return matchSearch && matchSev;
+      if (severity !== 'all' && l.severity !== severity) return false;
+      if (!search) return true;
+      return l.site.toLowerCase().includes(search) ||
+             l.title.toLowerCase().includes(search) ||
+             (l.desc || '').toLowerCase().includes(search);
     });
 
     logDiv.textContent = '';
