@@ -1,10 +1,17 @@
 // test_domain_validation.js
+const fs = require('fs');
+
+function loadIsCrossDomain() {
+  const backgroundJs = fs.readFileSync('unpacked/background.js', 'utf8');
+  const match = backgroundJs.match(/function isCrossDomain\(currentHost, targetHost\) \{([\s\S]+?)\n\}/);
+  if (!match) throw new Error("Could not find isCrossDomain");
+  return eval(`(${match[0]})`);
+}
+
+const isCrossDomain = loadIsCrossDomain();
+
 function testDomainValidation(currentHost, targetHost) {
-  // Logic from fixed background.js
-  if (currentHost && targetHost !== currentHost && !targetHost.endsWith("." + currentHost)) {
-    return true; // Exfiltration detected (vuln triggered/alert logged)
-  }
-  return false; // No exfiltration (safe)
+  return isCrossDomain(currentHost, targetHost);
 }
 
 function runTests() {
@@ -18,6 +25,8 @@ function runTests() {
     { current: "app.com", target: "app.com.attacker.com", expectedAlert: true },
     { current: "app.com", target: "app.com", expectedAlert: false },
     { current: "app.com", target: "sub.app.com", expectedAlert: false },
+    { current: "example.com", target: "example.com.", expectedAlert: false },
+    { current: "com", target: "attacker.com", expectedAlert: true },
   ];
 
   let passed = 0;
