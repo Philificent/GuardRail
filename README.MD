@@ -80,24 +80,24 @@ When enabled, the killswitch suppresses several of these behaviors instead of on
 
 GuardRail currently requests the following Chromium extension permissions:
 
-| Permission | Why GuardRail Uses It |
-| :--- | :--- |
-| `sidePanel` | Opens and manages the GuardRail side panel UI. |
-| `storage` | Persists logs, toggles, trust rules, and blocklist entries. |
-| `notifications` | Shows high-risk incident alerts and notification action buttons. |
-| `webRequest` | Monitors outgoing requests and captures request metadata for suspicious transfers. |
-| `cookies` | Supports site-state protection and reset workflows involving browser session data. |
-| `webNavigation` | Tracks the active top-level site so GuardRail can compare current origin against outgoing destinations. |
-| `scripting` | Supports injected runtime behavior for page-level inspection and response logic. |
-| `management` | Resolves `chrome-extension://` IDs to installed extension names for extension-targeted transfer logs. |
-| `declarativeNetRequest` | Enforces Panic Mode and persistent blocklist rules through Chromium’s request-blocking engine. |
-| `browsingData` | Clears cache, cookies, and local storage for the active site during site reset. |
+| Permission              | Why GuardRail Uses It                                                                                   |
+| :---------------------- | :------------------------------------------------------------------------------------------------------ |
+| `sidePanel`             | Opens and manages the GuardRail side panel UI.                                                          |
+| `storage`               | Persists logs, toggles, trust rules, and blocklist entries.                                             |
+| `notifications`         | Shows high-risk incident alerts and notification action buttons.                                        |
+| `webRequest`            | Monitors outgoing requests and captures request metadata for suspicious transfers.                      |
+| `cookies`               | Supports site-state protection and reset workflows involving browser session data.                      |
+| `webNavigation`         | Tracks the active top-level site so GuardRail can compare current origin against outgoing destinations. |
+| `scripting`             | Supports injected runtime behavior for page-level inspection and response logic.                        |
+| `management`            | Resolves `chrome-extension://` IDs to installed extension names for extension-targeted transfer logs.   |
+| `declarativeNetRequest` | Enforces Panic Mode and persistent blocklist rules through Chromium’s request-blocking engine.          |
+| `browsingData`          | Clears cache, cookies, and local storage for the active site during site reset.                         |
 
 GuardRail also requests the following host permission:
 
-| Host Permission | Why GuardRail Uses It |
-| :--- | :--- |
-| `<all_urls>` | Allows GuardRail to monitor requests, inject protection logic, and inspect suspicious behavior across arbitrary sites. |
+| Host Permission | Why GuardRail Uses It                                                                                                  |
+| :-------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `<all_urls>`    | Allows GuardRail to monitor requests, inject protection logic, and inspect suspicious behavior across arbitrary sites. |
 
 ## File Structure
 

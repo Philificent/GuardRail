@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+const { chromium } = require("playwright");
 
 (async () => {
   const browser = await chromium.launch();
@@ -16,25 +16,26 @@ const { chromium } = require('playwright');
               spoofEnabled: false,
               logs: [
                 {
-                  severity: 'high',
-                  time: '12:00',
-                  title: 'Test <img src="x" onerror="window.xss_successful = true">',
-                  desc: 'Description <script>window.xss_successful = true</script>',
-                  site: 'example.com'
-                }
-              ]
+                  severity: "high",
+                  time: "12:00",
+                  title:
+                    'Test <img src="x" onerror="window.xss_successful = true">',
+                  desc: "Description <script>window.xss_successful = true</script>",
+                  site: "example.com",
+                },
+              ],
             };
             callback(data);
           },
-          set: () => {}
-        }
+          set: () => {},
+        },
       },
       runtime: {
         sendMessage: () => {},
         onMessage: {
-          addListener: () => {}
-        }
-      }
+          addListener: () => {},
+        },
+      },
     };
   });
 
@@ -43,16 +44,20 @@ const { chromium } = require('playwright');
   // Wait for rendering to complete (render is called synchronously with our mock, but just in case)
   await page.waitForTimeout(1000);
 
-  const isXssSuccessful = await page.evaluate(() => window.xss_successful === true);
+  const isXssSuccessful = await page.evaluate(
+    () => window.xss_successful === true,
+  );
   if (isXssSuccessful) {
-    console.error('XSS vulnerability is still present!');
+    console.error("XSS vulnerability is still present!");
     process.exit(1);
   } else {
-    console.log('XSS vulnerability is mitigated.');
+    console.log("XSS vulnerability is mitigated.");
   }
 
-  const logHtml = await page.evaluate(() => document.getElementById('log').innerHTML);
-  console.log('Log HTML:', logHtml);
+  const logHtml = await page.evaluate(
+    () => document.getElementById("log").innerHTML,
+  );
+  console.log("Log HTML:", logHtml);
 
   await browser.close();
 })();

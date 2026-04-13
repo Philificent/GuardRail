@@ -1,19 +1,21 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const backgroundJsPath = path.join(__dirname, 'unpacked', 'background.js');
-const backgroundJs = fs.readFileSync(backgroundJsPath, 'utf8');
+const backgroundJsPath = path.join(__dirname, "unpacked", "background.js");
+const backgroundJs = fs.readFileSync(backgroundJsPath, "utf8");
 
 const MAX_PREVIEW_MATCH = backgroundJs.match(/const MAX_PREVIEW = (\d+);/);
 if (!MAX_PREVIEW_MATCH) {
-  console.error('Could not find MAX_PREVIEW constant in background.js');
+  console.error("Could not find MAX_PREVIEW constant in background.js");
   process.exit(1);
 }
 const MAX_PREVIEW = parseInt(MAX_PREVIEW_MATCH[1], 10);
 
-const functionMatch = backgroundJs.match(/function truncatePreview\(text\) \{[\s\S]*?\n\}/);
+const functionMatch = backgroundJs.match(
+  /function truncatePreview\(text\) \{[\s\S]*?\n\}/,
+);
 if (!functionMatch) {
-  console.error('Could not find truncatePreview function in background.js');
+  console.error("Could not find truncatePreview function in background.js");
   process.exit(1);
 }
 
@@ -24,33 +26,33 @@ function runTests() {
     {
       desc: "Empty string",
       input: "",
-      expected: ""
+      expected: "",
     },
     {
       desc: "Short string",
       input: "Hello World",
-      expected: "Hello World"
+      expected: "Hello World",
     },
     {
       desc: "Exactly MAX_PREVIEW",
       input: "A".repeat(MAX_PREVIEW),
-      expected: "A".repeat(MAX_PREVIEW)
+      expected: "A".repeat(MAX_PREVIEW),
     },
     {
       desc: "MAX_PREVIEW + 1",
       input: "A".repeat(MAX_PREVIEW + 1),
-      expected: "A".repeat(MAX_PREVIEW) + "..."
+      expected: "A".repeat(MAX_PREVIEW) + "...",
     },
     {
       desc: "Significantly longer than MAX_PREVIEW",
       input: "A".repeat(MAX_PREVIEW * 2),
-      expected: "A".repeat(MAX_PREVIEW) + "..."
+      expected: "A".repeat(MAX_PREVIEW) + "...",
     },
     {
       desc: "MAX_PREVIEW - 1",
       input: "A".repeat(MAX_PREVIEW - 1),
-      expected: "A".repeat(MAX_PREVIEW - 1)
-    }
+      expected: "A".repeat(MAX_PREVIEW - 1),
+    },
   ];
 
   let passed = 0;
@@ -60,7 +62,9 @@ function runTests() {
       console.log(`✅ PASS: [${t.desc}]`);
       passed++;
     } else {
-      console.error(`❌ FAIL: [${t.desc}] Expected length ${t.expected.length}, got ${result.length}`);
+      console.error(
+        `❌ FAIL: [${t.desc}] Expected length ${t.expected.length}, got ${result.length}`,
+      );
     }
   }
 
