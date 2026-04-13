@@ -145,41 +145,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 
-  if (request.type === "TOGGLE_SHIELD") {
-    chrome.storage.local.set({ shieldEnabled: request.enabled });
-    return false;
-  }
-
-  if (request.type === "TOGGLE_SPOOF") {
-    chrome.storage.local.set({ spoofEnabled: request.enabled });
-    return false;
-  }
-
-  if (request.type === "TOGGLE_JS_KILLSWITCH") {
-    chrome.storage.local.set({ jsKillswitchEnabled: request.enabled });
-    return false;
-  }
-
-  if (request.type === "WIPE_CURRENT_TAB") {
-    nukeSite();
-    return false;
-  }
-
-  if (request.type === "ADD_BLOCKLIST_DOMAIN") {
-    addDomainToBlocklist(request.domain).then((result) => sendResponse(result));
-    return true;
-  }
-
-  if (request.type === "REMOVE_BLOCKLIST_DOMAIN") {
-    removeDomainFromBlocklist(request.domain).then((result) => sendResponse(result));
-    return true;
-  }
-
-  if (request.type === "ADD_BLOCKLIST_BULK") {
-    addDomainsToBlocklist(request.domains).then((result) => sendResponse(result));
-    return true;
-  }
-
   if (request.type === "GET_SETTINGS") {
     chrome.storage.local.get(
       {
@@ -257,9 +222,9 @@ async function toggleSpoofing(isEnabled) {
   });
 }
 
-chrome.runtime.onMessage.addListener((request, sender) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "LOG_EVENT") {
-    logEvent(request.severity, request.title, request.desc);
+    try { logEvent(request.severity, request.title, request.desc); } catch (e) {}
   }
 
   // Security: Only allow sensitive actions from internal extension pages (e.g. side panel)
@@ -269,9 +234,44 @@ chrome.runtime.onMessage.addListener((request, sender) => {
     sender.url.startsWith(chrome.runtime.getURL(""));
 
   if (isInternal) {
-    if (request.type === "TOGGLE_SHIELD") toggleKillSwitch(request.enabled);
-    if (request.type === "WIPE_CURRENT_TAB") nukeSite();
+    if (request.type === "TOGGLE_SHIELD") {
+      chrome.storage.local.set({ shieldEnabled: request.enabled });
+      toggleKillSwitch(request.enabled);
+      return false;
+    }
+
+    if (request.type === "TOGGLE_SPOOF") {
+      chrome.storage.local.set({ spoofEnabled: request.enabled });
+      return false;
+    }
+
+    if (request.type === "TOGGLE_JS_KILLSWITCH") {
+      chrome.storage.local.set({ jsKillswitchEnabled: request.enabled });
+      return false;
+    }
+
+    if (request.type === "WIPE_CURRENT_TAB") {
+      nukeSite();
+      return false;
+    }
+
+    if (request.type === "ADD_BLOCKLIST_DOMAIN") {
+      addDomainToBlocklist(request.domain).then((result) => sendResponse(result));
+      return true;
+    }
+
+    if (request.type === "REMOVE_BLOCKLIST_DOMAIN") {
+      removeDomainFromBlocklist(request.domain).then((result) => sendResponse(result));
+      return true;
+    }
+
+    if (request.type === "ADD_BLOCKLIST_BULK") {
+      addDomainsToBlocklist(request.domains).then((result) => sendResponse(result));
+      return true;
+    }
   }
+
+  return false;
 });
 async function toggleKillSwitch(isEnabled, whitelist = [], blocklist = []) {
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
