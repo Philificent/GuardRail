@@ -32,7 +32,9 @@ document.addEventListener('blur', async (e) => {
                     details: { kind: 'password-breach' }
                 });
             }
-        } catch (err) { console.error("HIBP Check failed", err); }
+        } catch (err) {
+            // Silently fail in production
+        }
     }
 }, true);
 
