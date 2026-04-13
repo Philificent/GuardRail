@@ -275,9 +275,13 @@ chrome.runtime.onMessage.addListener((request, sender) => {
 });
 async function toggleKillSwitch(isEnabled, whitelist = [], blocklist = []) {
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-  const removableIds = existingRules
-    .map((rule) => rule.id)
-    .filter((id) => id === CORE_RULE_IDS.panicBlock || id >= BLOCKLIST_RULE_BASE);
+  const removableIds = [];
+  for (let i = 0; i < existingRules.length; i++) {
+    const id = existingRules[i].id;
+    if (id === CORE_RULE_IDS.panicBlock || id >= BLOCKLIST_RULE_BASE) {
+      removableIds.push(id);
+    }
+  }
   const addRules = [];
 
   if (isEnabled) {
