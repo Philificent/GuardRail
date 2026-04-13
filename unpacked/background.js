@@ -532,12 +532,28 @@ function getSenderSite(sender) {
 }
 
 function isCrossDomain(currentHost, targetHost) {
-  return Boolean(
-    currentHost &&
-      targetHost &&
-      targetHost !== currentHost &&
-      !targetHost.endsWith(`.${currentHost}`),
-  );
+  if (!currentHost || !targetHost) {
+    return false;
+  }
+
+  const normalize = (h) => h.toLowerCase().replace(/\.+$/, "");
+  const cur = normalize(currentHost);
+  const tgt = normalize(targetHost);
+
+  if (cur === tgt) {
+    return false;
+  }
+
+  // Basic TLD check: if currentHost is just a TLD, any other host is cross-domain.
+  // This is a heuristic since we don't have a Public Suffix List library.
+  const isTld = !cur.includes(".");
+  if (isTld) {
+    return true;
+  }
+
+  // targetHost is considered same-domain if it is a subdomain of currentHost.
+  // We use a strict suffix check with a leading dot to prevent partial matches.
+  return !tgt.endsWith(`.${cur}`);
 }
 
 function buildPayloadPreview(details) {
