@@ -117,7 +117,7 @@ async function handlePotentialExfiltration(details) {
       details: {
         kind: "network-request",
         method: details.method,
-        url: details.url,
+        url: parsedUrl.origin + parsedUrl.pathname,
         type: details.type,
         initiator: details.initiator || null,
         targetHost,
@@ -125,7 +125,7 @@ async function handlePotentialExfiltration(details) {
         extensionId: extensionContext?.id || null,
         extensionName: extensionContext?.name || null,
         blocked: wasBlocked,
-        query: parsedUrl.search ? parsedUrl.search.slice(1, MAX_PREVIEW + 1) : "",
+        query: parsedUrl.search ? "[REDACTED]" : "",
       },
     };
 
