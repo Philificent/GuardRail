@@ -532,12 +532,39 @@ function getSenderSite(sender) {
 }
 
 function isCrossDomain(currentHost, targetHost) {
-  return Boolean(
-    currentHost &&
-      targetHost &&
-      targetHost !== currentHost &&
-      !targetHost.endsWith(`.${currentHost}`),
-  );
+  if (!currentHost || !targetHost) {
+    return false;
+  }
+
+  const normalize = (h) => h.toLowerCase().replace(/\.+$/, "");
+  const cur = normalize(currentHost);
+  const tgt = normalize(targetHost);
+
+  if (cur === tgt) {
+    return false;
+  }
+
+  // Check if targetHost is a subdomain of currentHost.
+  if (tgt.endsWith(`.${cur}`)) {
+    // Heuristic: If currentHost is a single-label host (no dots), it might be a TLD.
+    // Treating TLDs as valid parent domains allows bypasses (e.g. currentHost="com",
+    // targetHost="attacker.com" would be flagged as same-domain).
+    if (!cur.includes(".")) {
+      // Localhost is a common development case where subdomains are expected.
+      if (cur === "localhost") {
+        return false;
+      }
+      // Most other short, purely alphabetic single-label hosts are TLDs.
+      // We treat these as cross-domain to be robust against exfiltration attempts.
+      if (cur.length <= 4 && /^[a-z]+$/.test(cur)) {
+        return true;
+      }
+    }
+    // Otherwise, subdomains of the same host are considered same-domain.
+    return false;
+  }
+
+  return true;
 }
 
 function buildPayloadPreview(details) {
