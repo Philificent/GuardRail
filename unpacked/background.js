@@ -4,7 +4,6 @@ const CORE_RULE_IDS = {
 };
 const BLOCKLIST_RULE_BASE = 1000;
 const MAX_LOGS = 100;
-const MAX_PREVIEW = 1200;
 const navigationHistory = {};
 const SPOOF_PROFILE = {
   userAgent: "Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/115.0",
@@ -538,42 +537,6 @@ function isCrossDomain(currentHost, targetHost) {
       targetHost !== currentHost &&
       !targetHost.endsWith(`.${currentHost}`),
   );
-}
-
-function buildPayloadPreview(details) {
-  if (!details.requestBody) {
-    return "";
-  }
-
-  if (details.requestBody.formData) {
-    return truncatePreview(JSON.stringify(details.requestBody.formData, null, 2));
-  }
-
-  if (!Array.isArray(details.requestBody.raw)) {
-    return "";
-  }
-
-  const decoder = new TextDecoder();
-  for (const entry of details.requestBody.raw) {
-    if (!entry.bytes) {
-      continue;
-    }
-
-    try {
-      const decoded = decoder.decode(entry.bytes);
-      if (decoded) {
-        return truncatePreview(decoded);
-      }
-    } catch (error) {
-      return "<binary payload>";
-    }
-  }
-
-  return "";
-}
-
-function truncatePreview(text) {
-  return text.length > MAX_PREVIEW ? `${text.slice(0, MAX_PREVIEW)}...` : text;
 }
 
 function normalizeDomain(domain) {
