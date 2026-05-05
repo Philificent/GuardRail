@@ -72,6 +72,7 @@ function render() {
     jsKillswitchToggle.checked = data.jsKillswitchEnabled;
     renderedLogs = data.logs;
     currentBlocklist = data.blocklist;
+    const blocklistSet = new Set(data.blocklist);
     spoofProfileCopy.textContent = formatSpoofProfile(data.spoofEnabled, data.spoofProfile);
     const search = searchInput.value.toLowerCase();
     const severity = severityFilter.value;
@@ -96,7 +97,7 @@ function render() {
           if (!normalizedDomain) {
             return;
           }
-          const blocked = data.blocklist.includes(normalizedDomain);
+          const blocked = blocklistSet.has(normalizedDomain);
           actions.push(createSafeElement('button', {
             className: `action-btn ${blocked ? 'blocked' : 'danger'}`,
             'data-action': blocked ? 'unblock' : 'block',
